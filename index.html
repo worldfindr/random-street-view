@@ -13,6 +13,15 @@
 <body>
     <h1>Filtered Street View</h1>
     
+    <label for="locationType">Choose a location type:</label>
+    <select id="locationType">
+        <option value="random">Random Location</option>
+        <option value="nearby">Nearby Spots</option>
+        <option value="USA">USA</option>
+        <option value="Japan">Japan</option>
+        <option value="France">France</option>
+    </select>
+    
     <label for="category">Choose a category:</label>
     <select id="category">
         <option value="tourist_attraction">Scenic Spots</option>
@@ -34,21 +43,58 @@
         function initMap() {
             svService = new google.maps.StreetViewService();
             panorama = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
-            map = new google.maps.Map(document.createElement('div')); // Hidden map for Places API
+            map = new google.maps.Map(document.createElement('div'));
             placesService = new google.maps.places.PlacesService(map);
+            loadFilteredLocation(); // Load a default random location on page load
+        }
+
+        function getRandomLatLng() {
+            return {
+                lat: (Math.random() * 180) - 90,
+                lng: (Math.random() * 360) - 180
+            };
+        }
+
+        function getCountryLatLng(country) {
+            const locations = {
+                'USA': { lat: 37.0902, lng: -95.7129 },
+                'Japan': { lat: 36.2048, lng: 138.2529 },
+                'France': { lat: 46.6034, lng: 1.8883 }
+            };
+            return locations[country] || getRandomLatLng();
         }
 
         function loadFilteredLocation() {
+            const locationType = document.getElementById('locationType').value;
             const category = document.getElementById('category').value;
-            const request = {
-                query: category,
-                fields: ['geometry']
-            };
+            let location;
 
-            placesService.findPlaceFromQuery(request, function(results, status) {
+            if (locationType === 'random') {
+                location = getRandomLatLng();
+            } else if (locationType === 'nearby' && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    location = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    fetchPlace(category, location);
+                });
+                return;
+            } else {
+                location = getCountryLatLng(locationType);
+            }
+
+            fetchPlace(category, location);
+        }
+
+        function fetchPlace(category, location) {
+            const request = {
+                location,
+                radius: 50000,
+                type: category
+            };
+            
+            placesService.nearbySearch(request, function(results, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const location = results[0].geometry.location;
-                    svService.getPanorama({ location, radius: 50000 }, function(data, status) {
+                    const place = results[Math.floor(Math.random() * results.length)].geometry.location;
+                    svService.getPanorama({ location: place, radius: 50000 }, function(data, status) {
                         if (status === "OK") {
                             panorama.setPosition(data.location.latLng);
                         } else {
