@@ -3,52 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Street View</title>
+    <title>Filtered Street View</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; }
-        #street-view { width: 100%; height: 500px; }
-        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #street-view { width: 100%; height: 500px; margin-top: 10px; }
+        select, button { margin-top: 10px; padding: 10px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <h1>Random Street View</h1>
+    <h1>Filtered Street View</h1>
+    
+    <label for="category">Choose a category:</label>
+    <select id="category">
+        <option value="tourist_attraction">Scenic Spots</option>
+        <option value="bar">Bars</option>
+        <option value="restaurant">Restaurants</option>
+        <option value="family_restaurant">Family Restaurants</option>
+    </select>
+    
+    <button onclick="loadFilteredLocation()">Find Location</button>
+    
     <div id="street-view"></div>
-    <button onclick="loadRandomLocation()">Get Random Location</button>
-
+    
     <script>
         let panorama;
         let svService;
+        let placesService;
+        let map;
 
         function initMap() {
             svService = new google.maps.StreetViewService();
             panorama = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
-
-            // Load an initial valid Street View location
-            loadRandomLocation();
+            map = new google.maps.Map(document.createElement('div')); // Hidden map for Places API
+            placesService = new google.maps.places.PlacesService(map);
         }
 
-        function loadRandomLocation() {
-            const latLng = getRandomLatLng();
-            svService.getPanorama({ location: latLng, radius: 50000 }, function(data, status) {
-                if (status === "OK") {
-                    panorama.setPosition(data.location.latLng);
+        function loadFilteredLocation() {
+            const category = document.getElementById('category').value;
+            const request = {
+                query: category,
+                fields: ['geometry']
+            };
+
+            placesService.findPlaceFromQuery(request, function(results, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    const location = results[0].geometry.location;
+                    svService.getPanorama({ location, radius: 50000 }, function(data, status) {
+                        if (status === "OK") {
+                            panorama.setPosition(data.location.latLng);
+                        } else {
+                            console.log("No Street View found for", category);
+                        }
+                    });
                 } else {
-                    console.log("No Street View found at", latLng, "Trying again...");
-                    loadRandomLocation(); // Retry with another random location
+                    console.log("No places found for", category);
                 }
             });
         }
-
-        function getRandomLatLng() {
-            return {
-                lat: (Math.random() * 140) - 70, // Reduced range to avoid poles
-                lng: (Math.random() * 360) - 180
-            };
-        }
     </script>
 
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQjdr6nyiFckzr--nBmOKO7yujSZFCHO4&callback=initMap"></script>
-
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQjdr6nyiFckzr--nBmOKO7yujSZFCHO4&libraries=places&callback=initMap"></script>
 </body>
 </html>
