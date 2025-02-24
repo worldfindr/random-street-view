@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Street View</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #map { width: 100%; height: 500px; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>Random Street View</h1>
+    <div id="map"></div>
+    <button onclick="loadRandomLocation()">Get Random Location</button>
+
+    <script>
+        let panorama;
+
+        function initMap() {
+            panorama = new google.maps.StreetViewPanorama(
+                document.getElementById('map'),
+                {
+                    position: getRandomLatLng(),
+                    pov: { heading: 0, pitch: 0 },
+                    zoom: 1
+                }
+            );
+        }
+
+        function getRandomLatLng() {
+            return {
+                lat: (Math.random() * 180) - 90, // Random latitude between -90 and 90
+                lng: (Math.random() * 360) - 180 // Random longitude between -180 and 180
+            };
+        }
+
+        function loadRandomLocation() {
+            panorama.setPosition(getRandomLatLng());
+        }
+    </script>
+
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQjdr6nyiFckzr--nBmOKO7yujSZFCHO4&callback=initMap"></script>
+
+</body>
+</html>
