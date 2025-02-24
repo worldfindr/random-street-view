@@ -27,10 +27,9 @@
         <option value="tourist_attraction">Scenic Spots</option>
         <option value="bar">Bars</option>
         <option value="restaurant">Restaurants</option>
-        <option value="family_restaurant">Family Restaurants</option>
-        <option value="museum">Museum</option>
-        <option value="national_park">National Parks</option>
-        <option value="historical_site">Historical Sites</option>
+        <option value="museum">Museums</option>
+        <option value="park">Parks</option>
+        <option value="historical">Historical Sites</option>
     </select>
     
     <button onclick="loadFilteredLocation()">Find Location</button>
@@ -42,13 +41,14 @@
         let svService;
         let placesService;
         let map;
+        let visitedLocations = [];
 
         function initMap() {
             svService = new google.maps.StreetViewService();
             panorama = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
             map = new google.maps.Map(document.createElement('div'));
             placesService = new google.maps.places.PlacesService(map);
-            loadFilteredLocation(); // Load a location on page load
+            setTimeout(loadFilteredLocation, 1000); // Ensure map loads first
         }
 
         function getRandomLatLng() {
@@ -91,13 +91,22 @@
             const request = {
                 location,
                 radius: 50000,
-                type: [category]
+                type: category
             };
             
             placesService.nearbySearch(request, function(results, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * results.length);
-                    const place = results[randomIndex].geometry.location;
+                    let filteredResults = results.filter(place => {
+                        return !visitedLocations.some(v => v.lat() === place.geometry.location.lat() && v.lng() === place.geometry.location.lng());
+                    });
+                    
+                    if (filteredResults.length === 0) {
+                        filteredResults = results;
+                    }
+
+                    const randomIndex = Math.floor(Math.random() * filteredResults.length);
+                    const place = filteredResults[randomIndex].geometry.location;
+                    visitedLocations.push(place);
                     showStreetView(place);
                 } else {
                     console.log("No places found for", category);
