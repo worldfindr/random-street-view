@@ -48,12 +48,12 @@
             panorama = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
             map = new google.maps.Map(document.createElement('div'));
             placesService = new google.maps.places.PlacesService(map);
-            loadRandomStreetView(); // Load a default random location on page load
+            loadFilteredLocation(); // Load a location on page load
         }
 
         function getRandomLatLng() {
             return {
-                lat: (Math.random() * 140) - 70, // Reduced range for better results
+                lat: (Math.random() * 140) - 70,
                 lng: (Math.random() * 360) - 180
             };
         }
@@ -91,20 +91,14 @@
             const request = {
                 location,
                 radius: 50000,
-                type: category
+                type: [category]
             };
             
             placesService.nearbySearch(request, function(results, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const place = results[Math.floor(Math.random() * results.length)].geometry.location;
-                    svService.getPanorama({ location: place, radius: 50000 }, function(data, status) {
-                        if (status === "OK") {
-                            panorama.setPosition(data.location.latLng);
-                        } else {
-                            console.log("No Street View found for", category);
-                            loadRandomStreetView(); // Fallback to random street view if none found
-                        }
-                    });
+                    const randomIndex = Math.floor(Math.random() * results.length);
+                    const place = results[randomIndex].geometry.location;
+                    showStreetView(place);
                 } else {
                     console.log("No places found for", category);
                     loadRandomStreetView(); // Fallback if no places found
@@ -112,16 +106,20 @@
             });
         }
 
-        function loadRandomStreetView() {
-            const randomLocation = getRandomLatLng();
-            svService.getPanorama({ location: randomLocation, radius: 50000 }, function(data, status) {
+        function showStreetView(location) {
+            svService.getPanorama({ location, radius: 50000 }, function(data, status) {
                 if (status === "OK") {
                     panorama.setPosition(data.location.latLng);
                 } else {
-                    console.log("No valid random street view found, retrying...");
-                    loadRandomStreetView(); // Retry until a valid location is found
+                    console.log("No Street View found, retrying...");
+                    loadRandomStreetView();
                 }
             });
+        }
+
+        function loadRandomStreetView() {
+            const randomLocation = getRandomLatLng();
+            showStreetView(randomLocation);
         }
     </script>
 
