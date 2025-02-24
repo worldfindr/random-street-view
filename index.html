@@ -6,39 +6,45 @@
     <title>Random Street View</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; }
-        #map { width: 100%; height: 500px; }
+        #street-view { width: 100%; height: 500px; }
         button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <h1>Random Street View</h1>
-    <div id="map"></div>
+    <div id="street-view"></div>
     <button onclick="loadRandomLocation()">Get Random Location</button>
 
     <script>
         let panorama;
+        let svService;
 
         function initMap() {
-            panorama = new google.maps.StreetViewPanorama(
-                document.getElementById('map'),
-                {
-                    position: getRandomLatLng(),
-                    pov: { heading: 0, pitch: 0 },
-                    zoom: 1
+            svService = new google.maps.StreetViewService();
+            panorama = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
+
+            // Load an initial valid Street View location
+            loadRandomLocation();
+        }
+
+        function loadRandomLocation() {
+            const latLng = getRandomLatLng();
+            svService.getPanorama({ location: latLng, radius: 50000 }, function(data, status) {
+                if (status === "OK") {
+                    panorama.setPosition(data.location.latLng);
+                } else {
+                    console.log("No Street View found at", latLng, "Trying again...");
+                    loadRandomLocation(); // Retry with another random location
                 }
-            );
+            });
         }
 
         function getRandomLatLng() {
             return {
-                lat: (Math.random() * 180) - 90, // Random latitude between -90 and 90
-                lng: (Math.random() * 360) - 180 // Random longitude between -180 and 180
+                lat: (Math.random() * 140) - 70, // Reduced range to avoid poles
+                lng: (Math.random() * 360) - 180
             };
-        }
-
-        function loadRandomLocation() {
-            panorama.setPosition(getRandomLatLng());
         }
     </script>
 
