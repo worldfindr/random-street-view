@@ -48,7 +48,7 @@
             panorama = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
             map = new google.maps.Map(document.createElement('div'));
             placesService = new google.maps.places.PlacesService(map);
-            setTimeout(loadFilteredLocation, 1000); // Ensure map loads first
+            setTimeout(loadFilteredLocation, 1000);
         }
 
         function getRandomLatLng() {
@@ -106,32 +106,39 @@
 
                     const randomIndex = Math.floor(Math.random() * filteredResults.length);
                     const place = filteredResults[randomIndex].geometry.location;
-                    visitedLocations.push(place);
-                    showStreetView(place);
+                    
+                    svService.getPanorama({ location: place, radius: 50 }, function(data, status) {
+                        if (status === "OK") {
+                            visitedLocations.push(place);
+                            showStreetView(data.location.latLng);
+                        } else {
+                            console.log("No Street View found for this place, trying another...");
+                            fetchPlace(category, location);
+                        }
+                    });
                 } else {
                     console.log("No places found for", category);
-                    loadRandomStreetView(); // Fallback if no places found
-                }
-            });
-        }
-
-        function showStreetView(location) {
-            svService.getPanorama({ location, radius: 50000 }, function(data, status) {
-                if (status === "OK") {
-                    panorama.setPosition(data.location.latLng);
-                } else {
-                    console.log("No Street View found, retrying...");
                     loadRandomStreetView();
                 }
             });
         }
 
+        function showStreetView(location) {
+            panorama.setPosition(location);
+        }
+
         function loadRandomStreetView() {
             const randomLocation = getRandomLatLng();
-            showStreetView(randomLocation);
+            svService.getPanorama({ location: randomLocation, radius: 50000 }, function(data, status) {
+                if (status === "OK") {
+                    showStreetView(data.location.latLng);
+                } else {
+                    console.log("Fallback: No Street View available at this location");
+                }
+            });
         }
     </script>
 
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQjdr6nyiFckzr--nBmOKO7yujSZFCHO4&libraries=places&callback=initMap"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&libraries=places&callback=initMap"></script>
 </body>
 </html>
